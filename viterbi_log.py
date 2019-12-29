@@ -159,14 +159,14 @@ def permutation_optimal(status, transfer_matrix):
 
 
 def main():
-    node_path_list = ["l0_predict.txt", "l1_predict.txt", "l2_predict.txt", "l3_predict.txt", "l4_predict.txt"
-                      , "l5_predict.txt"]
+    node_path_list = ["l0/l0_predict.txt", "l1/l1_predict.txt", "l2/l2_predict.txt", "l3/l3_predict.txt",
+                      "l4/l4_predict.txt", "l5/l5_predict.txt"]
     elbow_node_path_list = ["l0_predict_round.txt", "l1_predict_round.txt", "l2_predict_round.txt", "l3_predict_round.txt", "l4_predict_round.txt"
                             , "l5_predict_round.txt"]
-    link_path_list = ["l0_l1_predict.txt", "l0_l3_predict.txt", "l0_l4_predict.txt", "l0_l5_predict.txt"
-                      , "l1_l2_predict.txt"]
+    link_path_list = ["l0_l1/l0_l1_predict.txt", "l0_l3/l0_l3_predict.txt", "l0_l4/l0_l4_predict.txt",
+                      "l0_l5/l0_l5_predict.txt", "l1_l2/l1_l2_predict.txt"]
     node_matrix = get_node_matrix(node_path_list)
-    elbow_node_matrix = get_node_matrix(elbow_node_path_list)
+    # elbow_node_matrix = get_node_matrix(elbow_node_path_list)
     transfer_list = get_transfer_matrix(link_path_list)
     print(node_matrix.shape)
     # test the viterbi algorithm
@@ -186,7 +186,7 @@ def main():
     #         ef.write(s + "\n")
     #     print(index)
 
-    with open("data/store/viterbi_log_avg_result.txt", "a+") as vf:
+    with open("data/viterbi/viterbi_log_avg_result.txt", "a+") as vf:
         iteration = 0
         for index in range(node_matrix.shape[0]):
             node_matrix_log = np.zeros_like(node_matrix[index, :])

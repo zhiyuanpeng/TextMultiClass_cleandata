@@ -33,15 +33,32 @@ def get_candidate(list_length):
     return candidate
 
 
+def transfer_label(trans_value):
+    """
+    trans_value is the possibility of 1 1, we need to get
+       0 1
+     0 x x
+     1 x x
+    """
+    label_trans_matrix = np.zeros((2, 2))
+    label_trans_matrix[0, 0] = -1000
+    label_trans_matrix[0, 1] = -1000
+    label_trans_matrix[1, 0] = -1000
+    label_trans_matrix[1, 1] = trans_value
+    return label_trans_matrix
+
+
 def overall_optimal(status_list, transfer_matrix, lambda_value):
     score_list = []
     all_possible = get_candidate(len(status_list))
     for one_possible in all_possible:
         score = 0
         for index in range(len(one_possible)):
-            if index != 0 and one_possible[index - 1] == 1 and one_possible[index] == 1:
-                score += transfer_matrix[index - 1, index]
+            if index != 0:
+                label_trans_matrix = transfer_label(transfer_matrix[index - 1, index])
+                score += label_trans_matrix[one_possible[index - 1], one_possible[index]]
             score += (status_list[index] if one_possible[index] == 1 else np.log(1 - math.exp(status_list[index])))
+        penalty = lambda_value*np.sum(one_possible)
         score += lambda_value*np.sum(one_possible)
         score_list.append(score)
     max_score = max(score_list)
@@ -60,7 +77,9 @@ def permutation_optimal(status, transfer_matrix, lambda_value):
     index_list = list(itertools.permutations([i for i in range(len(status))], len(status)))
     score_list = []
     label_list = []
+    deg = 0
     for index in range(len(permutation_list)):
+        deg += 1
         # the order of status changed, so as the order of the transfer_matrix
         per_transfer = v.re_order_transfer(transfer_matrix, index_list[index])
         score, label = overall_optimal(permutation_list[index], per_transfer, lambda_value)
@@ -81,16 +100,16 @@ def permutation_optimal(status, transfer_matrix, lambda_value):
 
 
 def exhust_search(filename, lambda_value):
-    node_path_list = ["l0_predict_1000.txt", "l1_predict_1000.txt", "l2_predict_1000.txt", "l3_predict_1000.txt",
-                      "l4_predict_1000.txt", "l5_predict_1000.txt"]
+    node_path_list = ["l0_predict_575.txt", "l1_predict_575.txt", "l2_predict_575.txt", "l3_predict_575.txt",
+                      "l4_predict_575.txt", "l5_predict_575.txt"]
 
-    link_path_list = ["l0_l1_predict_1000.txt", "l0_l3_predict_1000.txt", "l0_l4_predict_1000.txt",
-                      "l0_l5_predict_1000.txt", "l1_l2_predict_1000.txt"]
-    link_path_list_truth = ["l0_l1_truth_575.txt", "l0_l3_truth_575.txt", "l0_l4_truth_575.txt", "l0_l5_truth_575.txt",
-                            "l1_l2_truth_575.txt"]
+    # link_path_list = ["l0_l1_predict_575.txt", "l0_l3_predict_575.txt", "l0_l4_predict_575.txt",
+    #                   "l0_l5_predict_575.txt", "l1_l2_predict_575.txt"]
+    link_path_list = ["l0_l1_truth_575.txt", "l0_l3_truth_575.txt", "l0_l4_truth_575.txt",
+                      "l0_l5_truth_575.txt", "l1_l2_truth_575.txt"]
     # node_matrix = v.get_node_matrix(node_path_list)
     node_matrix = np.loadtxt("data/store/original/original_predict_575.txt")
-    transfer_list = v.get_transfer_matrix(link_path_list_truth)
+    transfer_list = v.get_transfer_matrix(link_path_list)
     with open("data/exhaustion/" + filename, "a+") as vf:
         iteration = 0
         for index in range(node_matrix.shape[0]):
@@ -116,13 +135,12 @@ def exhust_search(filename, lambda_value):
             # iteration += 1
         print(index)
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("file_name", type=str, help="file name of the result file")
     parser.add_argument("lambda_value", type=float, help="lambda * #of 1s")
     args = parser.parse_args()
-    # args.file_name = "exhaustion_3_575.txt"
-    # args.lambda_value = 0.3
     exhust_search(args.file_name, args.lambda_value)
 
 

@@ -122,11 +122,11 @@ model = Model(inputs=deep_inputs, outputs=dense_layer_1)
 
 model.compile(loss='binary_crossentropy', optimizer='adagrad', metrics=['acc'])
 
-history = model.fit(X_train, y_train, batch_size=32, epochs=1, verbose=1, validation_split=0.2)
+history = model.fit(X_train, y_train, batch_size=128, epochs=50, verbose=1, validation_split=0.2)
 score = model.evaluate(X_test, y_test, verbose=1)
-predict_list = model.predict(X_test, batch_size=32, verbose=1)
-y_write(predict_list, "data/store/original/original_predict.txt")
-y_write_round(predict_list, "data/store/original/original_predict_round.txt")
+predict_list = model.predict(X_test, batch_size=128, verbose=1)
+y_write(predict_list, "data/store/original/original_predict_size128.txt")
+y_write_round(predict_list, "data/store/original/original_predict_round_size128.txt")
 right_sum_1 = 0
 right_sum_2 = 0
 y_predict_round = np.zeros_like(predict_list, dtype=int)
@@ -168,8 +168,9 @@ l5_con_mat_norm = l5_con_mat.astype('float') / l5_con_mat.sum(axis=1)[:, np.newa
 l5_con_mat_norm = np.around(l5_con_mat_norm, decimals=6)
 
 # save the result
-with open("data/store/original/original_result.txt", "a+") as r:
-    r.write("epoch is 1 \n")
+with open("data/store/original/original_result_size128.txt", "a+") as r:
+    r.write("epoch is 50 \n")
+    r.write("batch size is 128")
     r.write("self total accuracy is " + str(accuracy_total) + "\n")
     r.write("self row accuracy is " + str(accuracy_row) + "\n")
     r.write("score is " + str(score[0]) + "\n")
@@ -272,13 +273,13 @@ with open("data/store/original/original_result.txt", "a+") as r:
     else:
         r.write("node l5 recall of 1 is " + str(l5_con_mat[1, 1]/(l5_con_mat[0, 1] + l5_con_mat[1, 1])) + "\n")
 
-model.save("models/original.h5")
+model.save("models/original_size128.h5")
 
 epochs = len(history.history['loss'])
 plt.plot(range(epochs), history.history['loss'], label='loss')
 plt.plot(range(epochs), history.history['val_loss'], label='val_loss')
 plt.legend()
-plt.savefig("data/img/original_grad_1.png")
+plt.savefig("data/img/original_grad_50_size128.png")
 plt.show()
 
 

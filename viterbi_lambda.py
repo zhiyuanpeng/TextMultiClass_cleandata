@@ -1,5 +1,6 @@
 import numpy as np
 import itertools
+import math
 
 
 #  combine the result of each binary classifier
@@ -65,7 +66,10 @@ def transfer_label(trans_value):
     label_trans_matrix[0, 0] = 0
     label_trans_matrix[0, 1] = 0
     label_trans_matrix[1, 0] = 0
-    label_trans_matrix[1, 1] = trans_value
+    if trans_value != -1000:
+        label_trans_matrix[1, 1] = trans_value
+    else:
+        label_trans_matrix[1, 1] = trans_value
     return label_trans_matrix
 
 
@@ -79,12 +83,12 @@ def viterbi(status, transfer_matrix):
     store_score = []
     for index in range(len(status)):
         # get the current status
-        obs = [1 - status[index], status[index]]
+        obs = [np.log(1 - math.exp(status[index])), status[index]]
         # for the first state
         # the index is 0
         if len(previous) == 0:
             # no transfer_matrix info will be used
-            previous = [1 - status[index], status[index]]
+            previous = [np.log(1 - math.exp(status[index])), status[index]]
         # from the second the status, we need use the transfer matrix info
         else:
             # get the trans_label
@@ -161,9 +165,12 @@ def main():
                             , "l5_predict_round.txt"]
     link_path_list = ["l0_l1_predict_575.txt", "l0_l3_predict_575.txt", "l0_l4_predict_575.txt",
                       "l0_l5_predict_575.txt", "l1_l2_predict_575.txt"]
-    node_matrix = get_node_matrix(node_path_list)
+    link_path_list_truth = ["l0_l1_truth.txt", "l0_l3_truth.txt", "l0_l4_truth.txt", "l0_l5_truth.txt",
+                            "l1_l2_truth.txt"]
+    # node_matrix = get_node_matrix(node_path_list)
+    node_matrix = np.loadtxt("data/store/original/original_predict.txt")
     # elbow_node_matrix = get_node_matrix(elbow_node_path_list)
-    transfer_list = get_transfer_matrix(link_path_list)
+    transfer_list = get_transfer_matrix(link_path_list_truth)
     print(node_matrix.shape)
     # test the viterbi algorithm
     # status = [0.9, 0.1, 0.9, 0.3]
@@ -172,7 +179,7 @@ def main():
     #                             [0, 0.4, 0, 0.3],
     #                             [0, 0, 0.3, 0]])
     # total_score, best_label = viterbi(status, transfer_matrix)
-    # with open("data/store/viterbi_elbo.txt", "a+") as ef:
+    # with open("data/store/viterbi_log_elbo.txt", "a+") as ef:
     #     for index in range(elbow_node_matrix.shape[0]):
     #         best_label = elbow_node_matrix[index, :]
     #         s = ""
@@ -182,10 +189,20 @@ def main():
     #         ef.write(s + "\n")
     #     print(index)
 
-    with open("data/viterbi/viterbi_result_575.txt", "a+") as vf:
-        # iteration = 0
+    with open("data/viterbi/viterbi_nolambda_575.txt", "a+") as vf:
+        iteration = 0
         for index in range(node_matrix.shape[0]):
-            best_label = permutation_optimal(node_matrix[index, :], transfer_list[index])
+            node_matrix_log = np.zeros_like(node_matrix[index, :])
+            for i in range(len(node_matrix[index, :])):
+                node_matrix_log[i, ] = np.log(node_matrix[index, i])
+            transfer_list_log = np.zeros_like(transfer_list[index])
+            for i in range(transfer_list[index].shape[0]):
+                for j in range(transfer_list[index].shape[1]):
+                    if transfer_list[index][i, j] != 0:
+                        transfer_list_log[i, j] = np.log(transfer_list[index][i, j])
+                    else:
+                        transfer_list_log[i, j] = -1000
+            best_label = permutation_optimal(node_matrix_log, transfer_list_log)
             s = ""
             for i in range(len(best_label) - 1):
                 s = s + str(int(best_label[i])) + " "

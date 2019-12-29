@@ -13,39 +13,23 @@ import re
 
 from numpy import asarray
 from numpy import zeros
+import numpy as np
 
 import os
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
 
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 config = ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
+
 # use gpu
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-# read the train data
-toxic_comments = pd.read_csv("data/unprocess/train.csv")
-filter = toxic_comments["comment_text"] != ""
-toxic_comments = toxic_comments[filter]
-toxic_comments = toxic_comments.dropna()
-# we only train a binary classifier for lable 1
-# [l0, l1, l2, l3, l4, l5]
-# ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
-toxic_comments_labels = toxic_comments[["obscene"]]
-
-
-# clear text
-def preprocess_text(sen):
-    # Remove punctuations and numbers
-    sentence = re.sub('[^a-zA-Z]', ' ', sen)
-    # Single character removal
-    sentence = re.sub(r"\s+[a-zA-Z]\s+", ' ', sentence)
-    # Removing multiple spaces
-    sentence = re.sub(r'\s+', ' ', sentence)
-    return sentence
-
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # write the list
 def x_write(list_name, list_to_file_name):
     with open(list_to_file_name, 'a+') as f:
@@ -68,19 +52,25 @@ def y_write_round(list_name, list_to_file_name):
                 f.write(str(0) + "\n")
 
 
-X = []
-sentences = list(toxic_comments["comment_text"])
-for sen in sentences:
-    X.append(preprocess_text(sen))
+def read_text(filename):
+    """
+    read the train text to list
+    @param filename: the file name of the train.txt
+    @return: a list contains all the text
+    """
+    text_list = []
+    with open(filename, "r") as f:
+        text = f.readlines()
+        for line in text:
+            text_list.append(line.strip("\n"))
+    return text_list
 
-y = toxic_comments_labels.values
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
-# write the X_train, X_test, y_train, y_test
-x_write(X_train, "data/store/l2_X_train.txt")
-x_write(X_test, "data/store/l2_X_test.txt")
-y_write(y_train, "data/store/l2_y_train.txt")
-y_write(y_test, "data/store/l2_y_test.txt")
+X_train = read_text("data/processed/X_train.txt")
+X_test = read_text("data/processed/X_test.txt")
+# for node 0
+y_train = np.loadtxt("data/processed/y_train.txt", dtype=int)[:, 2]
+y_test = np.loadtxt("data/processed/y_test.txt", dtype=int)[:, 2]
 #
 tokenizer = Tokenizer(num_words=5000)
 tokenizer.fit_on_texts(X_train)
@@ -118,31 +108,54 @@ LSTM_Layer_1 = LSTM(128)(embedding_layer)
 dense_layer_1 = Dense(1, activation='sigmoid')(LSTM_Layer_1)
 model = Model(inputs=deep_inputs, outputs=dense_layer_1)
 
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc'])
+model.compile(loss='binary_crossentropy', optimizer='adagrad', metrics=['acc'])
 
-history = model.fit(X_train, y_train, batch_size=128, epochs=5, verbose=1, validation_split=0.2)
+history = model.fit(X_train, y_train, batch_size=128, epochs=100, verbose=1, validation_split=0.2)
 score = model.evaluate(X_test, y_test, verbose=1)
 predict_list = model.predict(X_test, batch_size=128, verbose=1)
-y_write(predict_list, "data/store/l2_predict.txt")
-y_write_round(predict_list, "data/store/l2_predict_round.txt")
-right_sum = 0
+y_write(predict_list, "data/store/l2/l2_predict.txt")
+y_write_round(predict_list, "data/store/l2/l2_predict_round.txt")
+y_predict_round = []
 for index in range(len(predict_list)):
     if float(predict_list[index]) > 0.5:
-        y_predict = 1
+        y_predict_round.append(1)
     else:
-        y_predict = 0
+        y_predict_round.append(0)
 
-    if y_predict == int(y_test[index]):
-        right_sum += 1
-accuracy = right_sum / len(predict_list)
-
+l2_con_mat = confusion_matrix(list(y_test), y_predict_round)
+l2_con_mat_norm = l2_con_mat.astype('float') / l2_con_mat.sum(axis=1)[:, np.newaxis]
+l2_con_mat_norm = np.around(l2_con_mat_norm, decimals=6)
 # save the result
-with open("data/store/l2_result.txt", "a+") as r:
-    r.write("self accuracy is " + str(accuracy) + "\n")
+with open("data/store/l2/l2_result.txt", "a+") as r:
+    r.write("\n")
+    r.write("\n")
+    r.write("epoch is 100 \n")
     r.write("score is " + str(score[0]) + "\n")
     r.write("accuracy is " + str(score[1]) + "\n")
+    r.write("\n")
+    r.write("node l2 confusion matrix [0, 0]: " + str(l2_con_mat[0, 0]) + "\n")
+    r.write("node l2 confusion matrix [0, 1]: " + str(l2_con_mat[0, 1]) + "\n")
+    r.write("node l2 confusion matrix [1, 0]: " + str(l2_con_mat[1, 0]) + "\n")
+    r.write("node l2 confusion matrix [1, 1]: " + str(l2_con_mat[1, 1]) + "\n")
+    r.write("node l2 precision of 0 is " + str(l2_con_mat_norm[0, 0]) + "\n")
+    if l2_con_mat[0, 0] == 0.0:
+        r.write("node l2 recall of 0 is " + str(0.0) + "\n")
+    else:
+        r.write("node l2 recall of 0 is " + str(l2_con_mat[0, 0] / (l2_con_mat[0, 0] + l2_con_mat[1, 0])) + "\n")
+    r.write("node l2 precision of 1 is " + str(l2_con_mat_norm[1, 1]) + "\n")
+    if l2_con_mat[1, 1] == 0.0:
+        r.write("node l2 recall of 1 is " + str(0.0) + "\n")
+    else:
+        r.write("node l2 recall of 1 is " + str(l2_con_mat[1, 1] / (l2_con_mat[0, 1] + l2_con_mat[1, 1])) + "\n")
 
 model.save("models/l2.h5")
+
+epochs = len(history.history['loss'])
+plt.plot(range(epochs), history.history['loss'], label='loss')
+plt.plot(range(epochs), history.history['val_loss'], label='val_loss')
+plt.legend()
+plt.savefig("data/img/l2_grad_100.png")
+plt.show()
 
 
 

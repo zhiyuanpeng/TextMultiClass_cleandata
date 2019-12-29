@@ -174,17 +174,17 @@ class MyTestCase(unittest.TestCase):
         best_label = v.permutation_optimal(status, transfer_matrix)
         self.assertEqual(best_label, [0, 1, 1])
 
-    def test_vlog_permutation_optimal(self):
-        status = [np.log(0.98), np.log(0.3), np.log(0.88), np.log(0.02), np.log(0.4), np.log(0.008)]
-        transfer_matrix = np.array([[-1000, np.log(0.95), -1000, np.log(0.92), np.log(0.92), np.log(0.97)],
-                                   [np.log(0.95), -1000, np.log(0.92), -1000, -1000, -1000],
-                                   [-1000, np.log(0.92), -1000, -1000, -1000, -1000],
-                                   [np.log(0.92), -1000, -1000, -1000, -1000, -1000],
-                                   [np.log(0.92), -1000, -1000, -1000, -1000, -1000],
-                                   [np.log(0.92), -1000, -1000, -1000, -1000, -1000]])
-        best_label = vlog.permutation_optimal(status, transfer_matrix)
-        print(best_label)
-        print("done")
+    # def test_vlog_permutation_optimal(self):
+    #     status = [np.log(0.98), np.log(0.3), np.log(0.88), np.log(0.02), np.log(0.4), np.log(0.008)]
+    #     transfer_matrix = np.array([[-1000, np.log(0.95), -1000, np.log(0.92), np.log(0.92), np.log(0.97)],
+    #                                [np.log(0.95), -1000, np.log(0.92), -1000, -1000, -1000],
+    #                                [-1000, np.log(0.92), -1000, -1000, -1000, -1000],
+    #                                [np.log(0.92), -1000, -1000, -1000, -1000, -1000],
+    #                                [np.log(0.92), -1000, -1000, -1000, -1000, -1000],
+    #                                [np.log(0.92), -1000, -1000, -1000, -1000, -1000]])
+    #     best_label = vlog.permutation_optimal(status, transfer_matrix)
+    #     print(best_label)
+    #     print("done")
 
 
 if __name__ == '__main__':
